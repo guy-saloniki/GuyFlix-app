@@ -1,5 +1,15 @@
 const global = {
   currentPage: window.location.pathname,
+  search: {
+    term: '',
+    type: '',
+    page: 1,
+    totalPages: 1,
+  },
+  api: {
+    apiKey: '0a40da461206643f1dd6f3a2c1fa53c4',
+    apiUrl: 'https://api.themoviedb.org/3',
+  },
 };
 
 const displayPopularMovies = async () => {
@@ -139,7 +149,6 @@ const displayMovieDetails = async () => {
           </div>
         </div>
   `;
-  console.log(movie);
   document.querySelector('#movie-details').appendChild(div);
 };
 
@@ -235,6 +244,21 @@ const displayBackgroundImage = (type, backgroundPath) => {
   }
 };
 
+// Search movies/shows
+const search = async () => {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  global.search.type = urlParams.get('type');
+  global.search.term = urlParams.get('search-term');
+
+  if (global.search.term !== '' && global.search.term !== null) {
+    const results = await searchAPIData();
+    console.log(results);
+  } else {
+    showAlert('Plaese add a search term');
+  }
+};
+
 //Display slider movies
 const displaySlider = async () => {
   const { results } = await fetchAPIData('movie/now_playing');
@@ -291,13 +315,31 @@ const initSwiper = () => {
 
 //Fetch data from API
 const fetchAPIData = async (endpiont) => {
-  const API_KEY = '0a40da461206643f1dd6f3a2c1fa53c4';
-  const API_URL = 'https://api.themoviedb.org/3';
+  const API_KEY = global.api.apiKey;
+  const API_URL = global.api.apiUrl;
 
   showSpinner();
 
   const resp = await fetch(
     `${API_URL}/${endpiont}?api_key=${API_KEY}&language=en-US`
+  );
+
+  const data = await resp.json();
+
+  hideSpinner();
+
+  return data;
+};
+
+// Make request to search
+const searchAPIData = async () => {
+  const API_KEY = global.api.apiKey;
+  const API_URL = global.api.apiUrl;
+
+  showSpinner();
+
+  const resp = await fetch(
+    `${API_URL}/search/${global.search.type}?api_key=${API_KEY}&language=en-US&query=${global.search.term}`
   );
 
   const data = await resp.json();
@@ -327,6 +369,18 @@ const hideSpinner = () => {
   document.querySelector('.spinner').classList.remove('show');
 };
 
+// Show alert
+const showAlert = (message, className) => {
+  const alertEl = document.createElement('div');
+  alertEl.classList.add('alert', className);
+  alertEl.appendChild(document.createTextNode(message));
+  document.querySelector('#alert').appendChild(alertEl);
+
+  setTimeout(() => {
+    alertEl.remove();
+  }, 2000);
+};
+
 const formatNumber = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
@@ -349,7 +403,7 @@ const init = () => {
       displayShowDetails();
       break;
     case '/search.html':
-      console.log('Search');
+      search();
       break;
   }
 
